@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Project page for UNISON: Unified Hand Interaction State Generation.">
+  <meta name="theme-color" content="#f7f9fc">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="UNISON: Unified Hand Interaction State Generation">
+  <meta property="og:description" content="From monocular video to a coupled trajectory of hand pose, contact, and pressure.">
+  <title>UNISON · Unified Hand Interaction State Generation</title>
+  <link rel="stylesheet" href="css/app.css">
+  <script defer src="js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <div class="reading-progress" aria-hidden="true"><span id="reading-progress-bar"></span></div>
+
+  <header class="site-header">
+    <nav class="topbar page-shell" aria-label="Primary navigation">
+      <a class="wordmark" href="#top" aria-label="UNISON home">
+        <span>UNISON</span>
+      </a>
+      <div class="nav-links">
+        <a href="#overview">Overview</a>
+        <a href="#benchmark">UNISON-Sim</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#adaptation">Sim-to-Real</a>
+      </div>
+      <button class="motion-toggle" id="motion-toggle" type="button" aria-pressed="false">
+        <span aria-hidden="true">Ⅱ</span> Pause motion
+      </button>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="hero page-shell" id="top">
+      <h1><em>UNISON</em>: Unified Hand Interaction State Generation</h1>
+      <p class="hero-deck">
+        A single conditional generator recovers hand geometry, surface contact, and load distribution
+        as one temporally coherent physical state.
+      </p>
+      <p class="authors">Anonymous authors</p>
+
+      <div class="hero-actions" aria-label="Project resources">
+        <a class="resource-pill" href="https://anonymous.4open.science/r/EgoPressureDiff-4DCB" target="_blank" rel="noopener noreferrer">
+          <img class="resource-icon" src="assets/icons/github.svg" alt="" aria-hidden="true">
+          <span>Code</span>
+        </a>
+        <a class="resource-pill" href="https://huggingface.co/datasets/researcher2026-1/UNISON-Sim" target="_blank" rel="noopener noreferrer">
+          <img class="resource-icon resource-icon-huggingface" src="assets/icons/huggingface.svg" alt="" aria-hidden="true">
+          <span>Data: UNISON-Sim</span>
+        </a>
+        <a class="resource-pill" href="https://huggingface.co/datasets/researcher2026-1/UNISON-S2R" target="_blank" rel="noopener noreferrer">
+          <img class="resource-icon resource-icon-huggingface" src="assets/icons/huggingface.svg" alt="" aria-hidden="true">
+          <span>Data: UNISON-S2R</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="section page-shell" id="overview">
+      <div class="section-kicker"><span>01</span> Overview</div>
+      <div class="abstract-grid">
+        <article>
+          <h2>One interaction, one state</h2>
+          <p class="lead">
+            A complete grasp state contains hand pose, the surface region that touches the object,
+            and the load distributed over that region. Separate prediction pipelines lose many of the
+            physical constraints that connect these signals.
+          </p>
+          <p>
+            Pose, contact, and pressure evolve together throughout approach, contact formation, load
+            bearing, and release. Their recovery from one camera is difficult because fingers and
+            contact interfaces are frequently occluded. Pressure also leaves few direct visual cues,
+            and similar hand appearances can represent different loads when object mass, shape, or
+            friction changes.
+          </p>
+          <p>
+            UNISON formulates video-conditioned hand understanding as generation of a coupled trajectory.
+            The trajectory contains a compact articulated pose, 162 taxel-level contact values, and 162
+            taxel-level pressure values at every frame. A shared state-space model exchanges evidence
+            across state components and time. Local visual context supplies motion evidence under
+            occlusion. Optional language, physical attributes, and object shape cues further reduce
+            ambiguity when the video alone is insufficient.
+          </p>
+          <p>
+            The resulting representation provides a common interface for grasp analysis, tactile
+            inference, and physical skill learning. It also supports transfer across camera viewpoints
+            because contact and pressure remain anchored to the hand surface.
+          </p>
+        </article>
+
+        <figure class="paper-figure teaser-figure">
+          <img src="assets/images/overview_task.png" alt="Comparison between decoupled state estimators and the unified UNISON task." fetchpriority="high">
+          <figcaption>
+            <strong>Task overview of UNISON.</strong> Existing methods estimate hand pose, contact,
+            and pressure independently and overlook their intrinsic dependencies. UNISON takes a
+            single-view grasping video from simulation or the real world together with optional context.
+            It jointly generates temporally coherent pose, contact, and pressure as coupled components
+            of one physical interaction state.
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="contribution-grid" aria-label="Main contributions">
+        <article class="contribution-card">
+          <span class="card-index">Contribution 01</span>
+          <h3>A unified task</h3>
+          <p>Pose, contact, and pressure form one time-aligned state trajectory with explicit physical dependencies.</p>
+        </article>
+        <article class="contribution-card">
+          <span class="card-index">Contribution 02</span>
+          <h3>Complete supervision</h3>
+          <p>UNISON-Sim synchronizes RGB and all three physical states over full approach, grasp, hold, and return episodes.</p>
+        </article>
+        <article class="contribution-card">
+          <span class="card-index">Contribution 03</span>
+          <h3>Structured generation</h3>
+          <p>Flow Matching, tactile topology, cross-state attention, and ordered generation encode how grasp states depend on one another.</p>
+        </article>
+      </div>
+
+      <div class="representation-grid">
+        <article>
+          <p class="eyebrow">Unified state representation</p>
+          <h3>Viewpoint-independent tactile coordinates</h3>
+          <p>
+            The 34-dimensional pose state describes global motion and finger articulation without
+            committing to a specific mesh. Contact and pressure share a fixed 162-taxel hand-surface
+            layout, so tactile predictions remain anatomically meaningful across camera views and
+            can be calibrated to different hand embodiments.
+          </p>
+          <p>
+            The taxels are organized into anatomical regions and connected through a fixed graph.
+            This structure preserves local neighborhoods along each finger and across the palm. It
+            also allows the model to reason with compact regional tokens while retaining dense
+            taxel-level outputs for contact and pressure.
+          </p>
+          <dl class="state-spec">
+            <div><dt>Pose</dt><dd>34-D compact articulation</dd></div>
+            <div><dt>Contact</dt><dd>162 binary taxels</dd></div>
+            <div><dt>Pressure</dt><dd>162 non-negative taxels</dd></div>
+          </dl>
+        </article>
+        <figure class="paper-figure">
+          <img src="assets/images/representation_taxel_topology.png" alt="The 162-taxel anatomical topology and its mapping to a Shadow Hand." loading="lazy">
+          <figcaption>
+            <strong>Taxel topology and its mapping on the Shadow Hand.</strong>
+            (a) The hand-surface taxel topology layout indexes and groups taxels according to
+            anatomical hand regions. (b) The corresponding taxel distribution is mapped onto the
+            Shadow Hand surface after manual calibration.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section section-tint" id="benchmark">
+      <div class="page-shell">
+        <div class="section-kicker"><span>02</span> UNISON-Sim</div>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Unified hand-state supervision</p>
+            <h2>Physical labels at video scale</h2>
+          </div>
+          <p>
+            Real capture rarely provides RGB, articulated pose, dense contact, and pressure together.
+            UNISON-Sim closes that gap using staged dexterous grasp trajectories replayed in MuJoCo
+            with a UR10e arm and Shadow Hand. Successful sequences are extended through holding and
+            return motions, which cover approach, contact formation, load bearing, and object release.
+            Every retained timestep exports synchronized RGB, a 34-dimensional articulated pose,
+            162-taxel contact, and 162-taxel pressure from the same physical state.
+          </p>
+        </div>
+
+        <div class="supporting-copy">
+          <p>
+            A filtering pipeline retains complete episodes that satisfy grasp success and visibility
+            checks. Camera placement, textures, object appearance, and illumination are randomized
+            while the underlying interaction state remains unchanged. This creates visual diversity
+            without weakening the alignment between observation and physical supervision.
+          </p>
+          <p>
+            The final benchmark contains 45,124 episodes over 2,356 object instances. Object-disjoint
+            train, validation, and test partitions measure generalization to unseen instances. Each
+            episode can also include natural-language descriptions, structured mass, size, and friction
+            attributes, together with a BPS shape prior when the object mesh is available.
+          </p>
+        </div>
+
+        <figure class="paper-figure paper-figure-wide dataset-figure">
+          <img src="assets/images/dataset_sim_statistics.png" alt="A UNISON-Sim sample together with contact, pressure, and object-mass statistics." loading="lazy">
+          <figcaption>
+            <strong>Representative sample and statistics of UNISON-Sim.</strong>
+            (a) A simulated sample contains an RGB frame, hand pose, taxel-level contact, and pressure
+            annotations together with visualizations mapped onto the Shadow Hand. (b) Dataset-level
+            contact probability over the 162-taxel hand surface. (c) Dataset-level average pressure.
+            (d) The relation between summed hand pressure and object mass. The trend line summarizes
+            the overall mass-pressure correlation.
+          </figcaption>
+        </figure>
+
+        <div class="metric-strip" aria-label="UNISON-Sim statistics">
+          <div><strong>583,305</strong><span>candidate episodes screened</span></div>
+          <div><strong>40,612 / 2,256 / 2,256</strong><span>train / validation / test</span></div>
+          <div><strong>15</strong><span>object categories</span></div>
+          <div><strong>162 + 162</strong><span>contact and pressure taxels</span></div>
+        </div>
+
+        <div class="subsection-heading">
+          <div>
+            <span class="subsection-number">A</span>
+            <div>
+              <h3>Rendered RGB views</h3>
+              <p>Randomized scene cameras lead the gallery. Wrist views are paired where available.</p>
+            </div>
+          </div>
+          <div class="media-legend">
+            <span><i class="legend-dot random"></i> Random view</span>
+            <span><i class="legend-dot wrist"></i> Wrist view</span>
+          </div>
+        </div>
+        <div class="media-grid rgb-grid" id="sim-rgb-gallery" aria-label="UNISON-Sim RGB video samples"></div>
+
+        <div class="subsection-heading">
+          <div>
+            <span class="subsection-number">B</span>
+            <div>
+              <h3>Complete episode panels</h3>
+              <p>Each clip aligns scene views, tactile maps, and object geometry. Its timeline summarizes contact area and pressure over the full grasp.</p>
+            </div>
+          </div>
+        </div>
+        <div class="stack-gallery collapsible-gallery is-collapsed" id="sim-fullstate-gallery" data-visible-count="3" aria-label="Complete UNISON-Sim episode samples"></div>
+        <button class="expand-button" type="button" data-gallery-target="sim-fullstate-gallery" aria-expanded="false">
+          Show all 9 complete episodes <span aria-hidden="true">↓</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="section page-shell" id="method">
+      <div class="section-kicker"><span>03</span> Method</div>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Conditional state-space Flow Matching</p>
+          <h2>Keep each state’s geometry, reason in one space</h2>
+        </div>
+          <p>
+          UNISON performs conditional Flow Matching directly over the unified state sequence. Pose
+          follows a compact single-token path. Contact and pressure follow topology-aware tactile paths
+          that preserve their hand-surface organization. The resulting tokens enter a shared State DiT
+          where temporal evidence and cross-state dependencies are modeled jointly.
+        </p>
+      </div>
+
+      <div class="supporting-copy method-copy">
+        <p>
+          A frozen DINOv2 backbone extracts frame-wise visual features and lightweight LoRA modules
+          adapt its attention projections to hand-object video. State tokens attend to a local temporal
+          window, which preserves nearby finger motion and contact transitions. A frozen UMT5 encoder
+          supplies global language context.
+        </p>
+        <p>
+          Structured mass, size, and friction values are encoded as typed slots with availability and
+          uncertainty information. Optional BPS distances describe object geometry. Bidirectional
+          attention aligns visual and text tokens before they enter the State DiT, while the static
+          conditions control adaptive normalization and attention gates.
+        </p>
+      </div>
+
+      <figure class="paper-figure paper-figure-wide method-overview">
+        <img src="assets/images/method_architecture.png" alt="UNISON architecture with multimodal condition encoders, a taxel-topology tokenizer, and State DiT blocks." loading="lazy">
+        <figcaption>
+          <strong>Overview of UNISON.</strong> The multimodal condition branch encodes the RGB clip,
+          text prompt, structured physical attributes, and BPS shape prior into condition tokens.
+          Bidirectional attention calibrates visual and text tokens. Attribute and BPS tokens are fused
+          with the flow-time embedding to form the global condition token. The taxel-topology state
+          tokenizer converts the noisy unified state into pose, contact, and pressure tokens. State DiT
+          blocks model dependencies through self-attention, local visual cross-attention, global text
+          cross-attention, and gated AdaLN-style modulation. The network predicts the Flow Matching
+          velocity over the unified pose-contact-pressure state sequence.
+        </figcaption>
+      </figure>
+
+      <div class="method-principles">
+        <article>
+          <span>01</span>
+          <h3>Modality-aware context</h3>
+          <p>Nearby visual tokens preserve motion cues during occlusion. Text supplies sequence-level
+            object and action semantics. Numeric attributes provide direct physical values, while BPS
+            geometry constrains feasible hand configurations and tactile regions.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Cross-state exchange</h3>
+          <p>One pose token and regional contact and pressure tokens attend within the same transformer.
+            Pose supplies articulated geometry. Contact identifies support regions. Pressure receives
+            evidence from both geometry and contact through shared self-attention.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>State-balanced training</h3>
+          <p>Flow Matching losses are computed independently for pose, contact, and pressure before
+            weighted aggregation. This balances the compact pose state with the larger tactile fields
+            and keeps supervision effective for all three components.</p>
+        </article>
+      </div>
+
+      <div class="figure-pair">
+        <figure class="paper-figure">
+          <img src="assets/images/method_taxel_tokenization.png" alt="Taxel-topology encoder and decoder for contact and pressure." loading="lazy">
+          <figcaption>
+            <strong>Taxel-topology tactile tokenization.</strong>
+            (a) The encoder embeds taxel values with coordinate and region cues, propagates local tactile
+            features through a taxel graph layer, and pools the updated features into 16 region-level
+            tactile tokens for each tactile field. (b) The decoder builds taxel layout queries from the
+            same coordinate-region cues, attends to the State DiT tactile tokens, and applies a taxel
+            graph layer before predicting dense taxel-wise tactile velocities.
+          </figcaption>
+        </figure>
+        <figure class="paper-figure">
+          <img src="assets/images/method_taxel_connectivity.png" alt="Taxel graph with local edges and anatomical bridge connections." loading="lazy">
+          <figcaption>
+            <strong>Taxel connectivity graph used by the tactile topology layer.</strong>
+            Solid edges encode four-neighbor grid adjacency. Dashed teal edges encode diagonal grid
+            adjacency. Orange bridge edges connect taxel groups along each finger chain. Node colors
+            indicate semantic hand-surface regions used by the region embedding and 16-region pooling.
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="hierarchy-grid">
+        <article>
+          <p class="eyebrow">Physics-motivated order</p>
+          <h3>Pose → contact → pressure</h3>
+          <p>
+            Hand geometry is most visible, contact must be compatible with that geometry, and pressure
+            is supported by contacted regions while also depending on the grasp phase and object
+            properties. UNISON follows this ordering explicitly in three State DiT passes.
+          </p>
+          <ol class="hierarchy-list">
+            <li><b>Pose</b><span>Resolve articulated geometry from the noisy unified state.</span></li>
+            <li><b>Contact</b><span>Use the updated pose as context for active hand-surface regions.</span></li>
+            <li><b>Pressure</b><span>Use both pose and contact to infer load distribution.</span></li>
+          </ol>
+        </article>
+        <figure class="paper-figure">
+          <img src="assets/images/method_hierarchical_generation.png" alt="Three-pass hierarchical generation from pose to contact to pressure." loading="lazy">
+          <figcaption>
+            <strong>Illustration of the hierarchical generation process.</strong> The State DiT
+            resolves the unified interaction state in three sequential passes. First, pose is predicted
+            from fully noisy tokens. Second, the updated pose slice provides context for contact
+            prediction. Third, the pose and contact slices provide context for pressure prediction.
+            Only the target velocity slice from each pass is retained. Redundant state predictions from
+            intermediate passes are discarded.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section section-results" id="results">
+      <div class="page-shell">
+        <div class="section-kicker"><span>04</span> UNISON-Sim Results</div>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Unified prediction in motion</p>
+            <h2>Consistent geometry, support, and load</h2>
+          </div>
+          <p>
+            Under one evaluation protocol, UNISON consistently improves all three state components
+            over specialized baselines. It yields more accurate hand geometry, stronger contact
+            overlap and temporal consistency, and more faithful pressure reconstruction. Improvements
+            are especially clear in the finger regions that determine contact support and pressure
+            localization. The pressure predictions also show better spatial structure and load placement.
+          </p>
+        </div>
+
+        <div class="evidence-note">
+          <p>
+            Controlled ablations trace these gains to unified supervision and structured information
+            exchange. Joint pose and pressure training improves both states over their single-state
+            variants. Enabling cross-state self-attention produces a clear improvement in pressure
+            overlap under the same supervision and model capacity.
+          </p>
+          <p>
+            Restoring hierarchical pose, contact, and pressure generation provides another consistent
+            gain and produces the strongest overall result. The progression supports the central design.
+            Joint supervision provides complementary evidence, cross-state attention exchanges that
+            evidence, and ordered generation follows the physical dependency among the states.
+          </p>
+        </div>
+
+        <div class="subsection-heading">
+          <div>
+            <span class="subsection-number">A</span>
+            <div>
+              <h3>Baseline comparisons</h3>
+              <p class="gallery-note">Each video contains two stacked output rows. The upper row shows hand contact and the lower row shows hand pressure.</p>
+            </div>
+          </div>
+          <div class="row-key" aria-label="Comparison row key">
+            <span>Row 1 · Contact</span><span>Row 2 · Pressure</span>
+          </div>
+        </div>
+        <div class="media-grid comparison-grid collapsible-gallery is-collapsed" id="sim-comparison-gallery" data-visible-count="4" aria-label="UNISON-Sim baseline comparison videos"></div>
+        <button class="expand-button" type="button" data-gallery-target="sim-comparison-gallery" aria-expanded="false">
+          Show all 12 comparisons <span aria-hidden="true">↓</span>
+        </button>
+
+        <div class="subsection-heading">
+          <div>
+            <span class="subsection-number">B</span>
+            <div>
+              <h3>UNISON inference</h3>
+              <p>Ground truth and generated tactile fields are aligned frame by frame for direct inspection.</p>
+            </div>
+          </div>
+        </div>
+        <div class="media-grid inference-grid collapsible-gallery is-collapsed" id="sim-inference-gallery" data-visible-count="4" aria-label="UNISON-Sim inference videos"></div>
+        <button class="expand-button" type="button" data-gallery-target="sim-inference-gallery" aria-expanded="false">
+          Show all 16 inference clips <span aria-hidden="true">↓</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="section page-shell" id="adaptation">
+      <div class="section-kicker"><span>05</span> Real-World Adaptation</div>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">UNISON-S2R visual transfer</p>
+          <h2>Adapt the camera interface, preserve the state prior</h2>
+        </div>
+          <p>
+          Simulation supplies complete state supervision. Real video introduces changes in hand
+          appearance, background, lighting, camera response, motion blur, and occlusion statistics.
+          Dense real pose, contact, and pressure labels remain difficult to collect at scale. UNISON
+          therefore keeps the coupled state generator frozen and adapts only a real-domain LoRA inside
+          the visual encoder.
+        </p>
+      </div>
+
+      <div class="supporting-copy">
+        <p>
+          The simulated branch acts as a frozen teacher and the real branch acts as a student. Both
+          branches feed visual tokens into the same frozen State DiT under shared auxiliary conditions.
+          Token alignment and generator-level velocity consistency teach the real visual encoder to
+          produce features that remain compatible with the simulation-trained state prior.
+        </p>
+        <p>
+          This restricted update targets the visual source of the domain gap and protects the learned
+          relationships among pose, contact, and pressure. LoRA regularization also keeps the real
+          adapter close to its simulation initialization when paired visual data is limited.
+        </p>
+      </div>
+
+      <figure class="paper-figure paper-figure-wide">
+        <img src="assets/images/adaptation_architecture.png" alt="UNISON-S2R paired video examples and the frozen-teacher visual adaptation pipeline." loading="lazy">
+        <figcaption>
+          <strong>Real-world adaptation with UNISON-S2R paired visual transfer data.</strong>
+          (a) UNISON-S2R provides temporally paired simulated dexterous-hand clips and real human-hand
+          RGB clips for the same interaction. These clips establish visual correspondence across the
+          two domains without dense real state labels during adapter training. (b) The adaptation
+          pipeline follows a teacher-student design. The teacher branch encodes simulated clips with a
+          frozen simulation-domain visual encoder. The student branch encodes real clips with a
+          trainable real-domain LoRA. The State DiT and state decoders remain shared and frozen.
+          Adaptation is confined to the visual condition interface through token alignment, velocity
+          consistency, and LoRA regularization.
+        </figcaption>
+      </figure>
+
+      <div class="metric-strip adaptation-stats" aria-label="UNISON-S2R statistics">
+        <div><strong>4,820</strong><span>paired sequence-view records</span></div>
+        <div><strong>488</strong><span>source demonstrations</span></div>
+        <div><strong>3.74M</strong><span>real + simulated frames</span></div>
+        <div><strong>61</strong><span>action primitives, four views</span></div>
+      </div>
+
+      <div class="supporting-copy compact-copy">
+        <p>
+          UNISON-S2R contains 4,820 paired sequence-view records from 488 source demonstrations.
+          Real human-hand clips and simulated dexterous-hand clips share the same action segment,
+          frame count, frame rate, and viewpoint index. Four synchronized cameras cover right-hand,
+          left-hand, and bimanual interactions across 61 action primitives.
+        </p>
+        <p>
+          The paired records establish direct visual correspondence across domains without providing
+          dense real interaction-state labels. They therefore support adapter training while keeping
+          real tactile measurements reserved for independent evaluation.
+        </p>
+      </div>
+
+      <div class="subsection-heading">
+        <div>
+          <span class="subsection-number">A</span>
+          <div>
+            <h3>Paired visual transfer samples</h3>
+            <p>Every vertical clip places simulation on the top half and the synchronized real interaction on the bottom half.</p>
+          </div>
+        </div>
+        <div class="split-key" aria-label="Video half key">
+          <span>Top · Simulation</span><span>Bottom · Real</span>
+        </div>
+      </div>
+      <div class="s2r-gallery collapsible-gallery is-collapsed" id="s2r-pair-gallery" data-visible-count="2" aria-label="UNISON-S2R paired videos"></div>
+      <button class="expand-button" type="button" data-gallery-target="s2r-pair-gallery" aria-expanded="false">
+        Show all 5 four-view pairs <span aria-hidden="true">↓</span>
+      </button>
+
+      <div class="acquisition-grid">
+        <article>
+          <p class="eyebrow">Independent real validation</p>
+          <h3>Bare-hand video with synchronized tactile reference</h3>
+          <p>
+            A separate 13-object set measures real contact and pressure while preserving a bare-hand
+            appearance in the camera view. These signals remain outside adapter training. Because the
+            set lacks pose ground truth, pose is inspected through image-aligned MANO retargeting and
+            agreement with WiLoR as a pseudo-reference.
+          </p>
+          <dl class="state-spec">
+            <div><dt>75</dt><dd>real video clips</dd></div>
+            <div><dt>16,406</dt><dd>RGB frames</dd></div>
+            <div><dt>18.23 min</dt><dd>recorded interaction</dd></div>
+          </dl>
+        </article>
+        <figure class="paper-figure">
+          <img src="assets/images/adaptation_data_acquisition.png" alt="Bare-hand acquisition setup with visible and tactile-reference hands." loading="lazy">
+          <figcaption>
+            <strong>Overview of the bare-hand data acquisition protocol.</strong>
+            (a) The tactile glove contains 162 taxels distributed across the fingers and palm.
+            (b) The same 162 taxel locations are mapped one-to-one onto the MANO hand surface. This
+            establishes a shared topology between physical tactile measurements and reconstructed hand
+            geometry. (c) The bare and gloved hands manipulate matched objects while the camera records
+            the interaction and a metronome provides timing cues.
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="subsection-heading">
+        <div>
+            <span class="subsection-number">B</span>
+            <div>
+              <h3>Adapted UNISON inference</h3>
+              <p>The generated fields are shown beside tactile references. The lower-left pose panel compares WiLoR on the left with UNISON on the right.</p>
+            </div>
+        </div>
+      </div>
+      <div class="media-grid inference-grid collapsible-gallery is-collapsed" id="s2r-inference-gallery" data-visible-count="6" aria-label="Real-world UNISON inference videos"></div>
+      <button class="expand-button" type="button" data-gallery-target="s2r-inference-gallery" aria-expanded="false">
+        Show all 28 real-world inference clips <span aria-hidden="true">↓</span>
+      </button>
+    </section>
+  </main>
+</body>
+</html>
