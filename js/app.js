@@ -14,8 +14,8 @@
     ["dataset_sim_rgb_07.mp4", "Sequence 2 · wrist B", "wrist"],
     ["dataset_sim_rgb_08.mp4", "Sequence 3 · random", "random"],
     ["dataset_sim_rgb_09.mp4", "Sequence 3 · wrist", "wrist"],
-    ["dataset_sim_rgb_10.mp4", "Sequence 4 · view A", "random"],
-    ["dataset_sim_rgb_11.mp4", "Sequence 4 · wrist A", "wrist"],
+    ["dataset_sim_rgb_11.mp4", "Sequence 4 · view A", "random"],
+    ["dataset_sim_rgb_10.mp4", "Sequence 4 · wrist A", "wrist"],
     ["dataset_sim_rgb_12.mp4", "Sequence 4 · view B", "random"],
     ["dataset_sim_rgb_13.mp4", "Sequence 4 · wrist B", "wrist"]
   ];

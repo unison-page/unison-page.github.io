@@ -268,6 +268,18 @@ a:hover {
   transform: translateY(-1px);
 }
 
+.resource-pill-appendix {
+  background: #f8c85b;
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: 0 0 0 3px rgba(248, 200, 91, 0.24), 0 5px 16px rgba(183, 124, 16, 0.18);
+}
+
+.resource-pill-appendix:hover {
+  background: #ffda80;
+  color: var(--ink);
+}
+
 .resource-icon {
   width: 18px;
   height: 18px;
